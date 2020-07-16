@@ -1,0 +1,124 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+    //Layout = null;
+    
+}
+
+<style type="text/css">
+    div {
+        padding: 8px;
+    }
+</style>
+<h1>Paycheck</h1>
+
+<h4>Employee</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Paycheck">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label>Employee Name: </label><input type="text" id="txtName" />
+                <div id='TextBoxesGroup'>
+                    <div id="TextBoxDiv1">
+                        <label>Dependent #1 : </label><input type='text' id='textbox1'>
+                    </div>
+                </div>
+                <input type='button' value='Add Dependent' id='addDependent'>
+                <input type='button' value='Remove Dependent' id='removeDependent'>
+                <input type="button" id="btnGet" value="Get Preview" />
+            </div>
+            <div>
+                <label>Preview: </label>
+                <hr />
+                <label>Name: </label> <div id="empName"></div>
+                <label>Paycheck Before Deduction: </label><div id="paycheckBeforeDeduction"></div>
+                <label>Deduction: </label><div id="perPayCheckDeduction"></div>
+                <label>Discount: </label><div id="perPayCheckDiscount"></div>
+                <label>Paycheck After Deduction: </label><div id="paycheckAfterDeduction"></div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script type="text/javascript">
+    class Dependents {
+        constructor(name) {
+            this.name = name;
+        }
+    }
+
+    var counter = 2;
+
+    $(function () {
+        $("#btnGet").click(function () {
+            var name = $("#txtName").val();
+
+            var dependents = [];
+            for (i = 0; i < counter; i++) {
+                if ($('#textbox' + (i + 1)).val() != "")
+                    dependents[i] = new Dependents($('#textbox' + (i + 1)).val());
+            }
+
+            var employee = JSON.stringify({ "Name": name, "Dependents": dependents });
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:4017/Paycheck",
+                data: employee,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    console.log(response);
+                    $("#empName").html(response.name);
+                    $("#paycheckBeforeDeduction").html(response.paycheckBeforeDeduction.toFixed(2));
+                    $("#perPayCheckDeduction").html(response.perPayCheckDeduction.toFixed(2));
+                    $("#perPayCheckDiscount").html(response.perPayCheckDiscount.toFixed(2));
+                    $("#paycheckAfterDeduction").html(response.paycheckAfterDeduction.toFixed(2));
+                },
+                failure: function (response) {
+                    alert(response.responseText);
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        });
+    });
+
+    $(document).ready(function () {
+
+        $("#addDependent").click(function () {
+
+            if (counter > 10) {
+                alert("Only 10 textboxes allow");
+                return false;
+            }
+
+            var newTextBoxDiv = $(document.createElement('div'))
+                .attr("id", 'TextBoxDiv' + counter);
+
+            newTextBoxDiv.after().html('<label>Dependent #' + counter + ' : </label>' +
+                '<input type="text" name="textbox' + counter +
+                '" id="textbox' + counter + '" value="" >');
+
+            newTextBoxDiv.appendTo("#TextBoxesGroup");
+
+            counter++;
+        });
+
+        $("#removeDependent").click(function () {
+            if (counter == 1) {
+                alert("No more textbox to remove");
+                return false;
+            }
+
+            counter--;
+
+            $("#TextBoxDiv" + counter).remove();
+
+        });
+    });
+</script>
